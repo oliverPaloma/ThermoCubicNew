@@ -212,8 +212,7 @@ auto calculatePressure(CubicEOSModel EoSModel,std::vector<double> Tc,std::vector
         auto b = OMEGA * (R * Tc[0]) / Pc[0]; 
         auto a = psi * (alphaTr * R * R * Tc[0] * Tc[0]) / Pc[0]; 
         
-        P = (R * T) / (V - b) - (a / ((V + epsilon * b) * (V + sigma * b)));
-}
+        P = (R * T) / (V - b) - (a / ((V + epsilon * b) * (V + sigma * b)));}
 
 
 //===========================================REFERENCE============================================
@@ -423,16 +422,11 @@ auto determinePhysicalStateOnedoubleRoot(double a, double b, double e, double s,
 }
 
 
-auto compute(CubicEOSProps& props, std::vector<double> &Tcr, 
-  std::vector<double> &Pcr, std::vector<double> &omega, double T, double P, 
-  std::vector<double> &x, CubicEOSModel &model, 
-  std::vector<std::vector<double>> &BIP) -> void
+auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double> &Pcr, std::vector<double> &omega, double T, double P, std::vector<double> &x, CubicEOSModel &model, std::vector<std::vector<double>> &BIP) -> void
 {
     /// The number of species in the phase.
     auto nspecies = x.size();
-
     /// The function that calculates the interaction parameters kij and its temperature derivatives.
-
     static std::vector<double> a(nspecies);     ///< Auxiliary array
     static std::vector<double> aT(nspecies);    ///< Auxiliary array
     static std::vector<double> aTT(nspecies);   ///< Auxiliary array
@@ -441,6 +435,7 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr,
     static std::vector<double> abarT(nspecies); ///< Auxiliary array
     static std::vector<double> bbar(nspecies);  ///< Auxiliary array
 
+    auto dx = std::numeric_limits<double>::epsilon();  //auto epsilon = 10^-3;
     // Check if the mole fractions are zero or non-initialized
     if(nspecies == 0 || *std::max_element(x.begin(),x.end()) <= 0.0)
         return;
@@ -645,13 +640,33 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr,
         const double IkP = 0.0;
 
         props.ln_phi[k] = Zk - (Zk - betak)/(Z - beta) - log(Z - beta) + q*I - qk*I - q*Ik;
+        props.ln_phi_T_perturbada[k] = (T + dx);
+        props.ln_phi_P_perturbada[k] = (P + dx);
 
+        props.dA_ln_phi_T[k] = ZkT - ((Z - beta)*(ZkT - betakT) - (Zk - betak)*(ZT - betaT)) / pow(Z - beta, 2) - (ZT - betaT) / (Z - beta) + qT * I + q * IT - qkT * I - qk * IT - qT * Ik - q * IkT;   // Derivações em 05/05/25 //std::vector<double> ln_phiV;// Derivações em 05/05/25 //std::vector<double> ln_phiV;
+        props.dA_ln_phi_P[k] = ZkP - ((Z - beta)*(ZkP - betakP) - (Zk - betak)*(ZP - betaP)) / pow(Z - beta, 2) - (ZP - betaP) / (Z - beta) + qP * I + q * IP - qkP * I - qk * IP - qP * Ik - q * IkP;
 
-       //props.ln_phiT[k] = ZkT - ((Z - beta)(ZkT - betakT) - (Zk - betak)(ZT - betaT)) / pow(Z - beta, 2) - (ZT - betaT) / (Z - beta) + qT * I + q * IT - qkT * I - qk * IT - qT * Ik - q * IkT; 
-       //props.ln_phiP[k] = ZkP - ((Z - beta)(ZkP - betakP) - (Zk - betak)(ZP - betaP)) / pow(Z - beta, 2) - (ZP - betaP) / (Z - beta) + qP * I + q * IP - qkP * I - qk * IP - qP * Ik - q * IkP;
+        props.dN_ln_phi_T[k] = (props.ln_phi_T_perturbada[k] - props.ln_phi[k]) / dx;
+        props.dN_ln_phi_P[k] = (props.ln_phi_P_perturbada[k] - props.ln_phi[k]) / dx;
+
+ 
+
+      // ANALITICA props.ln_phiT[k] = 
+      // ANALITICA props.ln_phiP[k] = 
 
        //props.ln_phiV[k] = ZkV - ((Z - beta)(ZkV - betakV) - (Zk - betak)(ZV - betaV)) / pow(Z - beta, 2) - (ZV - betaV) / (Z - beta) + qV * I + q * IV - qkV * I - qk * IV - qV * Ik - q * IkV; 
 
+
+
+  //for (int i = 1; i <= 10; ++i) {
+    //double dx = std::pow(10.0, -i);
+   // double fNum = f_numerica(x, dx);
+    
+    //std::cout << std::fixed << std::setprecision(15);
+    //std::cout << std ::setprecision(16)<< "Derivada numérica: " << fNum << std::endl;
+    //std::cout << "Erro entre Numérica e analitica: " << abs (fNum/fAnatical - 1) << "\n" << std::endl;
+ // }
+
        //add derivada de amix---------------------------
-    }
+    //}
 }

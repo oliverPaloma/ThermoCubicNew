@@ -41,10 +41,8 @@ int main ()
   //auto components = "NC6 NC10";
   //std::vector<double> Tc,Pc,omega;
  
-  auto EoSModel = CubicEOSModel::VanDerWaals; // vdW escolhido
-  //auto EoSModel = CubicEOSModel::PengRobinson; //PR escolhido
-  //auto EoSModel = CubicEOSModel::SoaveRedlichKwong;  //srk escolhido
-
+  auto EoSModel = CubicEOSModel::VanDerWaals; // PengRobinson   SoaveRedlichKwong  VanDerWaals
+  
   //std::vector<double> z{1.}; //fração molar
   
   read_database(Tc,Pc,omega,databasePath,components);
