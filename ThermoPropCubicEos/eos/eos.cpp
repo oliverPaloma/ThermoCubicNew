@@ -421,9 +421,8 @@ auto determinePhysicalStateOnedoubleRoot(double a, double b, double e, double s,
     return (Pmin != Pmin) ? StateOfMatter::superCritical : (P < Pmin) ? StateOfMatter::gas : StateOfMatter::liquid;
 }
 
-
-auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double> &Pcr, std::vector<double> &omega, double T, double P, std::vector<double> &x, CubicEOSModel &model, std::vector<std::vector<double>> &BIP) -> void
-{
+auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double> &Pcr, std::vector<double> &omega, double T, double P, std::vector<double> &x, CubicEOSModel &model, std::vector<std::vector<double>> &BIP) -> void {
+//auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double> &Pcr, std::vector<double> &omega, double T, double P, std::vector<double> &x, CubicEOSModel &model) -> void {
     /// The number of species in the phase.
     auto nspecies = x.size();
     /// The function that calculates the interaction parameters kij and its temperature derivatives.
@@ -448,8 +447,7 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double>
     const auto alphafn = alpha(model);
 
     // Calculate the parameters `a` and `b` of the cubic equation of state for each species
-    for(auto k = 0; k < nspecies; ++k)
-    {
+    for(auto k = 0; k < nspecies; ++k){
         const double factor = Psi*R*R*(Tcr[k]*Tcr[k])/Pcr[k]; // factor in Eq. (3.45) multiplying alpha
         const auto TrT = 1.0/Tcr[k];
         const auto Tr = T * TrT;
@@ -468,7 +466,7 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double>
 
     std::fill(abar.begin(), abar.end(), 0.0);
     std::fill(abarT.begin(), abarT.end(), 0.0);
-
+std::cout << "nspecies = " << nspecies << std::endl;
     for(auto i = 0; i < nspecies; ++i){
         for(auto j = 0; j < nspecies; ++j){
             if (i < BIP.size() && j < BIP[i].size()) {
@@ -477,6 +475,7 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double>
             std::cerr << "Índices fora dos limites: i = " << i << ", j = " << j << std::endl;}
 
             const double r   = 1.0 - BIP[i][j];//const double r   = 0;
+         
             const double rT  = 0.0;
             const double rTT = 0.0;
             const double rP  = 0.0;//add 12/05/25
@@ -511,11 +510,11 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double>
     //     bmix = sum(x[i] * bbar[i])
 
     double bmix = {};
-    for(auto i = 0; i < nspecies; ++i)
-    {
+
+    for(auto i = 0; i < nspecies; ++i){
         bbar[i] = Omega*R*Tcr[i]/Pcr[i]; // see Eq. (13.95) and unnumbered equation before Eq. (13.99)
-        bmix += x[i] * bbar[i];  // Eq. (13.91) of Smith et al. (2017)
-    }
+        bmix += x[i] * bbar[i];}  // Eq. (13.91) of Smith et al. (2017)
+    
 
     const auto bmixT = 0.0; // no temperature dependence! // Calculate the temperature and pressure derivatives of bmix
     const auto bmixP = 0.0; // no pressure dependence!
@@ -524,9 +523,7 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double>
     const double beta = P*bmix/(R*T); // Eq. (3.46) // Calculate the auxiliary parameter beta and its partial derivatives betaT (at const P) and betaP (at const T)
     const double betaT = -beta/T; 
 
-    const double bmixT = 0; // derivações.........
     const double betaP =  beta/P; 
-    const double bmixP = 0;
 
     // Compute the auxiliary variable q and its partial derivatives qT, qTT (at const P) and qP (at const T)
     const double q = amix/(bmix*R*T); // Eq. (3.47)
@@ -583,24 +580,24 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double>
         IP = I*(betaP/beta - (ZP + epsilon*betaP)/(Z + epsilon*beta)); // @eq{ I_{P}\equiv\left(\frac{\partial I}{\partial P}\right)_{T}=I\left(\frac{\beta_{P}}{\beta}-\frac{Z_{P}+\epsilon\beta_{P}}{Z+\epsilon\beta}\right) }
         }
 
-    const double V0  =  R*T/P;   //===============================================================
-    const double V0T =  V0/T;    // Calculate the ideal volume properties of the phase
-    const double V0P = -V0/P;    //===============================================================
+    const double V0  =  R*T/P; //===================================================//
+    const double V0T =  V0/T;  // Calculate the ideal volume properties of the phase//
+    const double V0P = -V0/P;  //===================================================//
 
-    const auto& V  = props.V  = Z*V0;               //===========================================================
-    const auto& VT = props.VT = ZT*V0 + Z*V0T;      // Calculate the corrected volumetric properties of the phase
-    const auto& VP = props.VP = ZP*V0 + Z*V0P;      //===========================================================
+    const auto& V  = props.V  = Z*V0;          //===========================================================//
+    const auto& VT = props.VT = ZT*V0 + Z*V0T; // Calculate the corrected volumetric properties of the phase//
+    const auto& VP = props.VP = ZP*V0 + Z*V0P; //===========================================================//
 
-    //=========================================================================================
-    // Calculate the residual properties of the phase
-    //=========================================================================================
+    //===============================================//
+    // Calculate the residual properties of the phase//
+    //===============================================//
     const auto& Gres  = props.Gres  = R*T*(Z - 1 - log(Z - beta) - q*I); // from Eq. (13.74) of Smith et al. (2017)
     const auto& Hres  = props.Hres  = R*T*(Z - 1 + T*qT*I); // equation after Eq. (13.74), but using T*qT instead of Tr*qTr, which is equivalent
     const auto& Cpres = props.Cpres = Hres/T + R*T*(ZT + qT*I + T*qTT*I + T*qT*IT); // from Eq. (2.19), Cp(res) := (dH(res)/dT)P === R*(Z - 1 + T*qT*I) + R*T*(ZT + qT*I + T*qTT*I + T*qT*IT) = H_res/T + R*T*(ZT + qT*I + T*qTT*I + T*qT*IT)
 
-    //=========================================================================================
-    // Calculate the fugacity coefficients for each species
-    //=========================================================================================
+    //=====================================================//
+    // Calculate the fugacity coefficients for each species//
+    //=====================================================//
     props.ln_phi.resize(nspecies);
 
     for(auto k = 0; k < nspecies; ++k){
@@ -649,24 +646,12 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double>
         props.dN_ln_phi_T[k] = (props.ln_phi_T_perturbada[k] - props.ln_phi[k]) / dx;
         props.dN_ln_phi_P[k] = (props.ln_phi_P_perturbada[k] - props.ln_phi[k]) / dx;
 
- 
-
-      // ANALITICA props.ln_phiT[k] = 
-      // ANALITICA props.ln_phiP[k] = 
+        std::cout << std::fixed << std::setprecision(15);
+        std::cout << "Erro derivadaT: " << abs (props.dN_ln_phi_T[k]/props.dA_ln_phi_T[k] - 1) << "\n" << std::endl;
+        std::cout << "Erro derivadaP: " << abs (props.dN_ln_phi_P[k]/props.dA_ln_phi_P[k] - 1) << "\n" << std::endl;
 
        //props.ln_phiV[k] = ZkV - ((Z - beta)(ZkV - betakV) - (Zk - betak)(ZV - betaV)) / pow(Z - beta, 2) - (ZV - betaV) / (Z - beta) + qV * I + q * IV - qkV * I - qk * IV - qV * Ik - q * IkV; 
-
-
-
-  //for (int i = 1; i <= 10; ++i) {
-    //double dx = std::pow(10.0, -i);
-   // double fNum = f_numerica(x, dx);
-    
-    //std::cout << std::fixed << std::setprecision(15);
-    //std::cout << std ::setprecision(16)<< "Derivada numérica: " << fNum << std::endl;
-    //std::cout << "Erro entre Numérica e analitica: " << abs (fNum/fAnatical - 1) << "\n" << std::endl;
- // }
-
-       //add derivada de amix---------------------------
-    //}
 }
+
+}
+

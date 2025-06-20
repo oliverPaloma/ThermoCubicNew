@@ -1,8 +1,5 @@
-#include "../../ThermoPropCubicEos.hpp"
+#include "../../../ThermoPropCubicEos.hpp"
 
-//double f(double x);
-//double f_numerica(double x, double dx);
-//double f_analitica (double x);
 
 int main ()
 {
@@ -10,14 +7,14 @@ int main ()
   auto T = 350.;
   auto P = 50.;
 
-
-
   std::vector<double> Tcr,Pcr,omega;
   std::vector<std::vector<double>> BIP;
 
   auto components = "N2 CO2 C1";
-  std::vector<double> z{0.25, 0.25, 0.50};
+  std::vector<double> x{0.25, 0.25, 0.50};//fração molar
+  int nspecies = x.size();
   
+
   auto EoSModel = CubicEOSModel::VanDerWaals; // PengRobinson   SoaveRedlichKwong  VanDerWaals
 
   auto databasePath = "/home/paloma/Documentos/ThermoPropCubicEos/database/test.yml";
@@ -29,16 +26,12 @@ int main ()
   auto dx = epsilon;
  
  //double fAnatical = f_analitica(x);
-
   //dN_ln_phiT();
   //dN_ln_phiV();
   //dA_ln_phiT();
   //dA_ln_phiV();
 
-
- 
-
- compute(props, Tcr, Pcr, omega, T,  P , z, EoSModel , BIP); //{
+ compute(props, Tcr, Pcr, omega, T,  P , x, EoSModel , BIP); //{
 
   //for (int i = 1; i <= 10; ++i) {
     //double dx = std::pow(10.0, -i);
@@ -49,9 +42,12 @@ int main ()
     //std::cout << "Erro entre Numérica e analitica: " << abs (fNum/fAnatical - 1) << "\n" << std::endl;
  // }
   //auto fNum = f_numerica(x, dx)
-  return 0;
-  
+
   //}
+
+
+  return 0; 
 }
+
 
 
