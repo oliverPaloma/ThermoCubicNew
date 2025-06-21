@@ -434,7 +434,6 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double>
     static std::vector<double> abarT(nspecies); ///< Auxiliary array
     static std::vector<double> bbar(nspecies);  ///< Auxiliary array
 
-    auto dx = std::numeric_limits<double>::epsilon();  //auto epsilon = 10^-3;
     // Check if the mole fractions are zero or non-initialized
     if(nspecies == 0 || *std::max_element(x.begin(),x.end()) <= 0.0)
         return;
@@ -458,6 +457,13 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double>
         b[k]   = Omega*R*Tcr[k]/Pcr[k]; // Eq. (3.44)
     }
 
+    //teste das derivações
+       
+    //props.ln_phi = aT;
+    //props.dA_ln_phi_T = aTT;
+    //return;
+
+
     // Calculate the parameter `amix` of the phase and the partial molar parameters `abar` of each species
     double amix = {};
     double amixT = {};
@@ -466,7 +472,7 @@ auto compute(CubicEOSProps& props, std::vector<double> &Tcr, std::vector<double>
 
     std::fill(abar.begin(), abar.end(), 0.0);
     std::fill(abarT.begin(), abarT.end(), 0.0);
-std::cout << "nspecies = " << nspecies << std::endl;
+
     for(auto i = 0; i < nspecies; ++i){
         for(auto j = 0; j < nspecies; ++j){
             if (i < BIP.size() && j < BIP[i].size()) {
@@ -483,23 +489,28 @@ std::cout << "nspecies = " << nspecies << std::endl;
             const double s   = sqrt(a[i]*a[j]); // Eq. (13.93)
             const double sT  = 0.5*s/(a[i]*a[j]) * (aT[i]*a[j] + a[i]*aT[j]);
             const double sTT = 0.5*s/(a[i]*a[j]) * (aTT[i]*a[j] + 2*aT[i]*aT[j] + a[i]*aTT[j]) - sT*sT/s;
-            const double sP  = 0.5*s/(a[i]*a[j]) * (aT[i]*a[j] + a[i]*aT[j]);//add 12/05/25
+            //const double sP  = 0.5*s/(a[i]*a[j]) * (aT[i]*a[j] + a[i]*aP[j]);//add 12/05/25
 
             const double aij   = r*s;
             const double aijT  = rT*s + r*sT;
             const double aijTT = rTT*s + 2.0*rT*sT + r*sTT;
-            const double aijP  = rP*s + r*sP;//add 12/05/25
+            //const double aijP  = rP*s + r*sP;//add 12/05/25
 
             amix   += x[i] * x[j] * aij; // Eq. (13.92) of Smith et al. (2017)
             amixT  += x[i] * x[j] * aijT;
             amixTT += x[i] * x[j] * aijTT;
-            amixP  += x[i] * x[j] * aijP;  //add 12/05/25
+            //amixP  += x[i] * x[j] * aijP;  //add 12/05/25
 
             abar[i]  += 2 * x[j] * aij;  // see Eq. (13.94)
             abarT[i] += 2 * x[j] * aijT;
         }
     }
+    props.ln_phi.resize(1);
+    props.dA_ln_phi_P.resize(1);
 
+    props.ln_phi[0] = amix;
+    props.dA_ln_phi_P[0] = amixP;
+    return;
     
     for(auto i = 0; i < nspecies; ++i){ // Finalize the calculation of `abar` and `abarT`
         abar[i] -= amix;
@@ -599,7 +610,9 @@ std::cout << "nspecies = " << nspecies << std::endl;
     // Calculate the fugacity coefficients for each species//
     //=====================================================//
     props.ln_phi.resize(nspecies);
-
+    props.dA_ln_phi_T.resize(nspecies);
+    props.dA_ln_phi_P.resize(nspecies);
+   
     for(auto k = 0; k < nspecies; ++k){
         const double betak = P*bbar[k]/(R*T);
 
@@ -609,7 +622,9 @@ std::cout << "nspecies = " << nspecies << std::endl;
 
         const double qk    = (1 + abar[k]/amix - bbar[k]/bmix)*q;
         const double qkT    = ((-abar[k] / (amix * amix)) * amixT + (bbar[k] / (bmix * bmix)) * bmixT) * q + (1 + abar[k] / amix - bbar[k] / bmix) * qT; //==============Derivações============
+        //erro amixP
         const double qkP    = ((-abar[k] / (amix * amix)) * amixP + (bbar[k] / (bmix * bmix)) * bmixP) * q + (1 + abar[k] / amix - bbar[k] / bmix) * qP; //==============Derivações============
+
       //const double qkV    = ((-abar[k] / (amix * amix)) * amixV + (bbar[k] / (bmix * bmix)) * bmixV) * q + (1 + abar[k] / amix - bbar[k] / bmix) * qV ;
 
         const double Ak    = (epsilon + sigma - 1.0)*betak - 1.0;
@@ -637,18 +652,20 @@ std::cout << "nspecies = " << nspecies << std::endl;
         const double IkP = 0.0;
 
         props.ln_phi[k] = Zk - (Zk - betak)/(Z - beta) - log(Z - beta) + q*I - qk*I - q*Ik;
-        props.ln_phi_T_perturbada[k] = (T + dx);
-        props.ln_phi_P_perturbada[k] = (P + dx);
+
+        //props.ln_phi_T_perturbada[k] = (T + dx);
+    
+        //props.ln_phi_P_perturbada[k] = (P + dx);
 
         props.dA_ln_phi_T[k] = ZkT - ((Z - beta)*(ZkT - betakT) - (Zk - betak)*(ZT - betaT)) / pow(Z - beta, 2) - (ZT - betaT) / (Z - beta) + qT * I + q * IT - qkT * I - qk * IT - qT * Ik - q * IkT;   // Derivações em 05/05/25 //std::vector<double> ln_phiV;// Derivações em 05/05/25 //std::vector<double> ln_phiV;
         props.dA_ln_phi_P[k] = ZkP - ((Z - beta)*(ZkP - betakP) - (Zk - betak)*(ZP - betaP)) / pow(Z - beta, 2) - (ZP - betaP) / (Z - beta) + qP * I + q * IP - qkP * I - qk * IP - qP * Ik - q * IkP;
 
-        props.dN_ln_phi_T[k] = (props.ln_phi_T_perturbada[k] - props.ln_phi[k]) / dx;
-        props.dN_ln_phi_P[k] = (props.ln_phi_P_perturbada[k] - props.ln_phi[k]) / dx;
+        //props.dN_ln_phi_T[k] = (props.ln_phi_T_perturbada[k] - props.ln_phi[k]) / dx;
+        //props.dN_ln_phi_P[k] = (props.ln_phi_P_perturbada[k] - props.ln_phi[k]) / dx;
 
-        std::cout << std::fixed << std::setprecision(15);
-        std::cout << "Erro derivadaT: " << abs (props.dN_ln_phi_T[k]/props.dA_ln_phi_T[k] - 1) << "\n" << std::endl;
-        std::cout << "Erro derivadaP: " << abs (props.dN_ln_phi_P[k]/props.dA_ln_phi_P[k] - 1) << "\n" << std::endl;
+        //std::cout << std::fixed << std::setprecision(15);
+        //std::cout << "Erro derivadaT: " << abs (props.dN_ln_phi_T[k]/props.dA_ln_phi_T[k] - 1) << "\n" << std::endl;
+        //std::cout << "Erro derivadaP: " << abs (props.dN_ln_phi_P[k]/props.dA_ln_phi_P[k] - 1) << "\n" << std::endl;
 
        //props.ln_phiV[k] = ZkV - ((Z - beta)(ZkV - betakV) - (Zk - betak)(ZV - betaV)) / pow(Z - beta, 2) - (ZV - betaV) / (Z - beta) + qV * I + q * IV - qkV * I - qk * IV - qV * Ik - q * IkV; 
 }
